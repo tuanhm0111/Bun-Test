@@ -1,109 +1,314 @@
 import type { Request, Response, NextFunction } from "express";
-import { userService } from "../services/user.service";
-import { createResponse } from "../utils/helpers";
-import { logger } from "../utils/logger";
+import { UserService } from "../services/user.service";
+import type {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponse,
+} from "../types/user.types";
+import type {
+  ApiResponse,
+  PaginatedResponse,
+  QueryFilters,
+} from "../types/common.type";
+import { AppError } from "../utils/appError";
+import { HttpStatusCode } from "../utils/constants";
 
-class UserController {
-  async getUsers(req: Request, res: Response, next: NextFunction) {
-    try {
-      const users = await userService.getAllUsers();
+export class UserController {
+  private userService: UserService;
 
-      res.json(createResponse(true, "Users retrieved successfully", users));
-    } catch (error) {
-      logger.error("Error getting users:", error);
-      next(error);
-    }
+  constructor() {
+    this.userService = new UserService();
   }
 
-  async getUserById(req: Request, res: Response, next: NextFunction) {
+  // GET /users - Get all users with pagination and filtering
+  getUsers = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id || "");
+      const {
+        page = 1,
+        limit = 10,
+        search,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = res.locals.validatedQuery || {};
 
-      if (isNaN(id)) {
-        return res
-          .status(400)
-          .json(
-            createResponse(
-              false,
-              "Invalid user ID",
-              undefined,
-              "User ID must be a number"
-            )
-          );
+      const filters: QueryFilters = {
+        search: search as string,
+      };
+
+      const result = await this.userService.findAll({
+        page: Number(page),
+        limit: Number(limit),
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as "asc" | "desc",
+        filters,
+      });
+
+      const response: ApiResponse<PaginatedResponse<UserResponse>> = {
+        success: true,
+        message: "Users retrieved successfully",
+        data: result,
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // GET /users/:id - Get user by ID
+  getUserById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = parseInt(id ?? '');
+
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
       }
 
-      const user = await userService.getUserById(id);
+      const user = await this.userService.findById(userId);
 
       if (!user) {
-        return res.status(404).json(createResponse(false, "User not found"));
+        throw new AppError("User not found", HttpStatusCode.NOT_FOUND);
       }
 
-      res.json(createResponse(true, "User retrieved successfully", user));
+      const response: ApiResponse<UserResponse> = {
+        success: true,
+        message: "User retrieved successfully",
+        data: user,
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
     } catch (error) {
-      logger.error("Error getting user by ID:", error);
       next(error);
     }
-  }
+  };
 
-  async createUser(req: Request, res: Response, next: NextFunction) {
+  // POST /users - Create new user
+  createUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const user = await userService.createUser(req.body);
+      const userData: CreateUserDto = req.body;
 
-      res
-        .status(201)
-        .json(createResponse(true, "User created successfully", user));
-    } catch (error) {
-      logger.error("Error creating user:", error);
-
-      if (error instanceof Error && error.message.includes("already exists")) {
-        return res.status(409).json(createResponse(false, error.message));
+      // Check if user already exists
+      const existingUser = await this.userService.findByEmail(userData.email);
+      if (existingUser) {
+        throw new AppError(
+          "User with this email already exists",
+          HttpStatusCode.CONFLICT
+        );
       }
 
+      const user = await this.userService.create(userData);
+
+      const response: ApiResponse<UserResponse> = {
+        success: true,
+        message: "User created successfully",
+        data: user,
+      };
+
+      res.status(HttpStatusCode.CREATED).json(response);
+    } catch (error) {
       next(error);
     }
-  }
+  };
 
-  async updateUser(req: Request, res: Response, next: NextFunction) {
+  // PUT /users/:id - Update user
+  updateUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id || "");
+      const { id } = req.params;
+      const userId = parseInt(id ?? '');
+      const updateData: UpdateUserDto = req.body;
 
-      if (isNaN(id)) {
-        return res.status(400).json(createResponse(false, "Invalid user ID"));
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
       }
 
-      const user = await userService.updateUser(id, req.body);
-
-      if (!user) {
-        return res.status(404).json(createResponse(false, "User not found"));
+      // Check if user exists
+      const existingUser = await this.userService.findById(userId);
+      if (!existingUser) {
+        throw new AppError("User not found", HttpStatusCode.NOT_FOUND);
       }
 
-      res.json(createResponse(true, "User updated successfully", user));
+      // Check email uniqueness if email is being updated
+      if (updateData.email && updateData.email !== existingUser.email) {
+        const emailExists = await this.userService.findByEmail(
+          updateData.email
+        );
+        if (emailExists) {
+          throw new AppError("Email already in use", HttpStatusCode.CONFLICT);
+        }
+      }
+
+      const updatedUser = await this.userService.update(userId, updateData);
+
+      if (!updatedUser) {
+        throw new AppError("Failed to update user", HttpStatusCode.INTERNAL_SERVER_ERROR);
+      }
+
+      const response: ApiResponse<UserResponse> = {
+        success: true,
+        message: "User updated successfully",
+        data: updatedUser,
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
     } catch (error) {
-      logger.error("Error updating user:", error);
       next(error);
     }
-  }
+  };
 
-  async deleteUser(req: Request, res: Response, next: NextFunction) {
+  // DELETE /users/:id - Delete user
+  deleteUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const id = parseInt(req.params.id || "");
+      const { id } = req.params;
+      const userId = parseInt(id ?? '');
 
-      if (isNaN(id)) {
-        return res.status(400).json(createResponse(false, "Invalid user ID"));
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
       }
 
-      const deleted = await userService.deleteUser(id);
-
-      if (!deleted) {
-        return res.status(404).json(createResponse(false, "User not found"));
+      // Check if user exists
+      const existingUser = await this.userService.findById(userId);
+      if (!existingUser) {
+        throw new AppError("User not found", HttpStatusCode.NOT_FOUND);
       }
 
-      res.json(createResponse(true, "User deleted successfully"));
+      await this.userService.delete(userId);
+
+      const response: ApiResponse = {
+        success: true,
+        message: "User deleted successfully",
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
     } catch (error) {
-      logger.error("Error deleting user:", error);
       next(error);
     }
-  }
+  };
+
+  // GET /users/:id/profile - Get user profile
+  getUserProfile = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = parseInt(id ?? '');
+
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
+      }
+
+      const profile = await this.userService.getProfile(userId);
+
+      if (!profile) {
+        throw new AppError("User profile not found", HttpStatusCode.NOT_FOUND);
+      }
+
+      const response: ApiResponse<UserResponse> = {
+        success: true,
+        message: "User profile retrieved successfully",
+        data: profile,
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // PATCH /users/:id/status - Update user status
+  updateUserStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      const userId = parseInt(id ?? '');
+
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
+      }
+
+      if (typeof isActive !== "boolean") {
+        throw new AppError("isActive must be a boolean", HttpStatusCode.BAD_REQUEST);
+      }
+
+      const updatedUser = await this.userService.updateStatus(userId, isActive);
+
+      if (!updatedUser) {
+        throw new AppError("Failed to update user status", HttpStatusCode.INTERNAL_SERVER_ERROR);
+      }
+
+      const response: ApiResponse<UserResponse> = {
+        success: true,
+        message: `User ${isActive ? "activated" : "deactivated"} successfully`,
+        data: updatedUser,
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // PATCH /users/:id/change-password - Change user password
+  changePassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { oldPassword, newPassword } = req.body;
+      const userId = parseInt(id ?? '');
+
+      if (isNaN(userId)) {
+        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
+      }
+
+      if (!oldPassword || !newPassword) {
+        throw new AppError(
+          "Old password and new password are required",
+          HttpStatusCode.BAD_REQUEST
+        );
+      }
+
+      await this.userService.changePassword(userId, oldPassword, newPassword);
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Password changed successfully",
+      };
+
+      res.status(HttpStatusCode.OK).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
+// Export instance for use in routes
 export const userController = new UserController();

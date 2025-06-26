@@ -15,8 +15,12 @@ logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
+# Prisma
+prisma/migration_lock.toml
+prisma/migrations/*/migration.sql
+
 # dotenv environment variable files
-# .env
+.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -32,3 +36,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db

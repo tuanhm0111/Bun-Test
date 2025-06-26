@@ -1,3 +1,5 @@
+import type { UserResponse } from "./user.types";
+
 export interface LoginDTO {
   email: string;
   password: string;
