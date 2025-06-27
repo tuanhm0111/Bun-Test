@@ -134,10 +134,6 @@ export class UserController {
       const userId = parseInt(id ?? '');
       const updateData: UpdateUserDto = req.body;
 
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       // Check if user exists
       const existingUser = await this.userService.findById(userId);
       if (!existingUser) {

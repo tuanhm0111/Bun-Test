@@ -225,10 +225,6 @@ export class UserService {
 
   async update(id: number, data: UpdateUserDto): Promise<UserResponse | null> {
     try {
-      if (!id || id <= 0) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       // Create update data object
       const updateData: any = { ...data };
 
