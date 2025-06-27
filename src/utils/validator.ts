@@ -2,7 +2,11 @@ import { z } from "zod";
 
 // User params schema
 export const userParamsSchema = z.object({
-  id: z.string().regex(/^\d+$/, "ID must be a positive integer"),
+  id: z
+  .string()
+  .regex(/^\d+$/, "ID must be a positive integer")
+  .transform((val) => parseInt(val, 10))
+  .refine((val) => val > 0, { message: "ID must be > 0" })
 });
 
 // Create user schema

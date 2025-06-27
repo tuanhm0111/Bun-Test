@@ -29,3 +29,10 @@ export interface PaginationParams {
   sortOrder: 'asc' | 'desc';
   filters?: QueryFilters;
 }
+
+export interface IAppError {
+  message: string;
+  statusCode: number;
+  isOperational: boolean;
+  stack?: string;
+}

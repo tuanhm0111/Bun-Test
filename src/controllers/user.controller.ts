@@ -285,17 +285,6 @@ export class UserController {
       const { oldPassword, newPassword } = req.body;
       const userId = parseInt(id ?? '');
 
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
-      if (!oldPassword || !newPassword) {
-        throw new AppError(
-          "Old password and new password are required",
-          HttpStatusCode.BAD_REQUEST
-        );
-      }
-
       await this.userService.changePassword(userId, oldPassword, newPassword);
 
       const response: ApiResponse = {

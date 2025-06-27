@@ -1,12 +1,5 @@
 import { HttpStatusCode } from "./constants";
-
-// Error interface
-export interface IAppError {
-  message: string;
-  statusCode: number;
-  isOperational: boolean;
-  stack?: string;
-}
+import type { IAppError } from "../types/common.type";
 
 // Error factory functions
 export const createError = (

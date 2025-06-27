@@ -435,17 +435,6 @@ export class UserService {
     newPassword: string
   ): Promise<void> {
     try {
-      if (!id || id <= 0) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
-      if (!oldPassword || !newPassword) {
-        throw new AppError(
-          "Old password and new password are required",
-          HttpStatusCode.BAD_REQUEST
-        );
-      }
-
       const user = await prisma.user.findUnique({
         where: { id },
         select: { password: true },
