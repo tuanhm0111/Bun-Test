@@ -24,6 +24,13 @@ export class UserService {
     updatedAt: true,
   };
 
+  normalizeUser = (user: any): UserResponse => ({
+    ...user,
+    firstName: user.firstName ?? undefined,
+    lastName: user.lastName ?? undefined,
+    avatar: user.avatar ?? undefined,
+  });
+
   async create(data: CreateUserDto): Promise<UserResponse> {
     try {
       // Hash password
@@ -37,12 +44,7 @@ export class UserService {
         select: this.userSelect,
       });
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
@@ -109,12 +111,7 @@ export class UserService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: users.map(user => ({
-          ...user,
-          firstName: user.firstName ?? undefined,
-          lastName: user.lastName ?? undefined,
-          avatar: user.avatar ?? undefined,
-        })),
+        data: users.map((user) => this.normalizeUser(user)),
         pagination: {
           page,
           limit,
@@ -135,10 +132,6 @@ export class UserService {
 
   async findById(id: number): Promise<UserResponse | null> {
     try {
-      if (!id || id <= 0) {
-        return null;
-      }
-
       const user = await prisma.user.findUnique({
         where: { id },
         select: this.userSelect,
@@ -148,12 +141,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       console.error("Error in findById:", error);
       throw new AppError(
@@ -178,12 +166,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       console.error("Error in findByEmail:", error);
       throw new AppError(
@@ -208,12 +191,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       console.error("Error in findByUsername:", error);
       throw new AppError(
@@ -246,12 +224,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
@@ -277,10 +250,6 @@ export class UserService {
 
   async delete(id: number): Promise<void> {
     try {
-      if (!id || id <= 0) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       await prisma.user.delete({
         where: { id },
       });
@@ -301,12 +270,11 @@ export class UserService {
     }
   }
 
-  async updateStatus(id: number, isActive: boolean): Promise<UserResponse | null> {
+  async updateStatus(
+    id: number,
+    isActive: boolean
+  ): Promise<UserResponse | null> {
     try {
-      if (!id || id <= 0) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       const user = await prisma.user.update({
         where: { id },
         data: {
@@ -320,12 +288,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
@@ -367,12 +330,7 @@ export class UserService {
         return null;
       }
 
-      return {
-        ...user,
-        firstName: user.firstName ?? undefined,
-        lastName: user.lastName ?? undefined,
-        avatar: user.avatar ?? undefined,
-      };
+      return this.normalizeUser(user);
     } catch (error) {
       console.error("Error in getProfile:", error);
       throw new AppError(
@@ -410,12 +368,7 @@ export class UserService {
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
-      return {
-        ...userWithoutPassword,
-        firstName: userWithoutPassword.firstName ?? undefined,
-        lastName: userWithoutPassword.lastName ?? undefined,
-        avatar: userWithoutPassword.avatar ?? undefined,
-      };
+      return this.normalizeUser(userWithoutPassword);
     } catch (error) {
       console.error("Error in verifyPassword:", error);
       throw new AppError(

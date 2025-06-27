@@ -69,10 +69,6 @@ export class UserController {
       const { id } = req.params;
       const userId = parseInt(id ?? '');
 
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       const user = await this.userService.findById(userId);
 
       if (!user) {
@@ -178,10 +174,6 @@ export class UserController {
       const { id } = req.params;
       const userId = parseInt(id ?? '');
 
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       // Check if user exists
       const existingUser = await this.userService.findById(userId);
       if (!existingUser) {
@@ -211,10 +203,6 @@ export class UserController {
       const { id } = req.params;
       const userId = parseInt(id ?? '');
 
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
       const profile = await this.userService.getProfile(userId);
 
       if (!profile) {
@@ -243,14 +231,6 @@ export class UserController {
       const { id } = req.params;
       const { isActive } = req.body;
       const userId = parseInt(id ?? '');
-
-      if (isNaN(userId)) {
-        throw new AppError("Invalid user ID", HttpStatusCode.BAD_REQUEST);
-      }
-
-      if (typeof isActive !== "boolean") {
-        throw new AppError("isActive must be a boolean", HttpStatusCode.BAD_REQUEST);
-      }
 
       const updatedUser = await this.userService.updateStatus(userId, isActive);
 
