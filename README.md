@@ -149,9 +149,9 @@ Authorization: Bearer <your-jwt-token>
 
 ### Endpoints
 
-#### Health Check
+#### API Check
 ```http
-GET /api/v1/health
+GET /
 ```
 
 #### Users Management
@@ -367,9 +367,6 @@ bun --inspect src/index.ts
 ### Manual Testing với cURL
 
 ```bash
-# Health check
-curl -X GET http://localhost:3009/api/v1/health
-
 # Create user
 curl -X POST http://localhost:3009/api/v1/users \
   -H "Content-Type: application/json" \
