@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { env } from "./config";
+import { env } from "./config/env";
 import routes from "./routes";
 import { loggerMiddleware } from "./middleware/logger.middleware";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware";

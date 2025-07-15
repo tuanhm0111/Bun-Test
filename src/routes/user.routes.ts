@@ -1,80 +1,71 @@
 import { Router } from "express";
-import { UserController } from "../controllers/user.controller";
+import { userController } from "../controllers/user.controller";
 import {
   validateBody,
   validateParams,
   validateQuery,
 } from "../middleware/validation.middleware";
-import {
-  createUserSchema,
-  updateUserSchema,
-  userParamsSchema,
-  getUsersQuerySchema,
-  updateUserStatusSchema,
-  changePasswordSchema,
-} from "../utils/validator";
-import { asyncHandler } from "../utils/asyncHandler";
+import { userSchemas } from '../utils/validators/user.validator';
 
 const router = Router();
-const userController = new UserController();
 
-// GET /users?page=1&limit=10&search=john&sortBy=name&sortOrder=asc
+// GET /users?page=1&limit=10&search=john&sortBy=username&sortOrder=asc
 router.get(
   "/",
-  validateQuery(getUsersQuerySchema),
-  asyncHandler(userController.getUsers)
+  validateQuery(userSchemas.query),
+  userController.getUsers
 );
 
 // GET /users/:id
 router.get(
   "/:id",
-  validateParams(userParamsSchema),
-  asyncHandler(userController.getUserById)
+  validateParams(userSchemas.params),
+  userController.getUserById
 );
 
 // GET /users/:id/profile
 router.get(
   "/:id/profile",
-  validateParams(userParamsSchema),
-  asyncHandler(userController.getUserProfile)
+  validateParams(userSchemas.params),
+  userController.getUserProfile
 );
 
 // POST /users
 router.post(
   "/",
-  validateBody(createUserSchema),
-  asyncHandler(userController.createUser)
+  validateBody(userSchemas.create),
+  userController.createUser
 );
 
 // PUT /users/:id
 router.put(
   "/:id",
-  validateParams(userParamsSchema),
-  validateBody(updateUserSchema),
-  asyncHandler(userController.updateUser)
+  validateParams(userSchemas.params),
+  validateBody(userSchemas.update),
+  userController.updateUser
 );
 
 // PATCH /users/:id/status
 router.patch(
   "/:id/status",
-  validateParams(userParamsSchema),
-  validateBody(updateUserStatusSchema),
-  asyncHandler(userController.updateUserStatus)
+  validateParams(userSchemas.params),
+  validateBody(userSchemas.status),
+  userController.updateUserStatus
 );
 
 // PATCH /users/:id/change-password
 router.patch(
   "/:id/change-password",
-  validateParams(userParamsSchema),
-  validateBody(changePasswordSchema),
-  asyncHandler(userController.changePassword)
+  validateParams(userSchemas.params),
+  validateBody(userSchemas.changePassword),
+  userController.changePassword
 );
 
 // DELETE /users/:id
 router.delete(
   "/:id",
-  validateParams(userParamsSchema),
-  asyncHandler(userController.deleteUser)
+  validateParams(userSchemas.params),
+  userController.deleteUser
 );
 
 export default router;

@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import { createResponse } from '../utils/helpers';
-import { env } from '../config';
+import { HttpStatusCode } from '../utils/constants';
+import { env } from '../config/env';
 
 export const errorHandler = (
   error: Error,
@@ -17,20 +18,23 @@ export const errorHandler = (
   });
 
   const isDevelopment = env.NODE_ENV === 'development';
-
-  res.status(500).json(createResponse(
+  const response = createResponse(
     false,
     'Internal server error',
     undefined,
-    isDevelopment ? error.message : 'Something went wrong'
-  ));
+    isDevelopment ? [error.message] : ['Something went wrong']
+  );
+
+  res.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json(response);
 };
 
 export const notFoundHandler = (req: Request, res: Response) => {
-  res.status(404).json(createResponse(
+  const response = createResponse(
     false,
     'Route not found',
     undefined,
-    `Cannot ${req.method} ${req.path}`
-  ));
+    [`Cannot ${req.method} ${req.path}`]
+  );
+
+  res.status(HttpStatusCode.NOT_FOUND).json(response);
 };

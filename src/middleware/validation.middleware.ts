@@ -1,19 +1,23 @@
 import type { Request, Response, NextFunction } from "express";
-import { ZodSchema, ZodError } from "zod";
+import { ZodSchema } from "zod";
+import { createResponse } from "../utils/helpers";
+import { HttpStatusCode } from "../utils/constants";
 
 /**
- * Middleware to validate request body, params, or query using Zod schemas.
- * If validation fails, it responds with a 400 status and error details.
- * If validation succeeds, it modifies the request object with validated data.
+ * Middleware to validate request body using Zod schema.
  */
 export const validateBody = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      res.status(400).json({
-        error: "Validation failed",
-        details: result.error.errors,
-      });
+      const response = createResponse(
+        false,
+        "Validation failed",
+        undefined,
+        result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      );
+
+      res.status(HttpStatusCode.BAD_REQUEST).json(response);
       return;
     }
     req.body = result.data;
@@ -23,18 +27,19 @@ export const validateBody = (schema: ZodSchema) => {
 
 /**
  * Middleware to validate request parameters using Zod schema.
- * If validation fails, it responds with a 400 status and error details.
- * @param schema Zod schema to validate request parameters
- * @returns
  */
 export const validateParams = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.params);
     if (!result.success) {
-      res.status(400).json({
-        error: "Validation failed",
-        details: result.error.errors,
-      });
+      const response = createResponse(
+        false,
+        "Validation failed",
+        undefined,
+        result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      );
+      
+      res.status(HttpStatusCode.BAD_REQUEST).json(response);
       return;
     }
     req.params = result.data;
@@ -42,20 +47,21 @@ export const validateParams = (schema: ZodSchema) => {
   };
 };
 
-/*
+/**
  * Middleware to validate request query parameters using Zod schema.
- * If validation fails, it responds with a 400 status and error details.
- * @param schema Zod schema to validate request query parameters
- * @returns
  */
 export const validateQuery = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.query);
     if (!result.success) {
-      res.status(400).json({
-        error: "Validation failed",
-        details: result.error.errors,
-      });
+      const response = createResponse(
+        false,
+        "Validation failed",
+        undefined,
+        result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+      );
+      
+      res.status(HttpStatusCode.BAD_REQUEST).json(response);
       return;
     }
     res.locals.validatedQuery = result.data;

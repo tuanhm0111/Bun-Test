@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { env } from '../config';
+import { env } from '../config/env';
 
 const logger = winston.createLogger({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
